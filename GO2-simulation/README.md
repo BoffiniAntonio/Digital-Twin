@@ -1,33 +1,32 @@
-# Unitree Go2 Simulation with ProtoTwin
+# Unitree Go2 ProtoTwin Simulation
 
-This project provides a simulation environment for the **Unitree Go2 quadruped robot** using **ProtoTwin** and **Reinforcement Learning (PPO)**.
+This project provides a **Unitree Go2 robot simulation environment** using **ProtoTwin** and **Reinforcement Learning (PPO)**.
 
-The goal is to train a locomotion policy in simulation and test the behavior inside a ProtoTwin digital twin environment.
-
----
-
-# Project Goal
-
-This repository focuses on:
-
-- Simulating the Unitree Go2 robot
-- Training locomotion policies using reinforcement learning
-- Running trained models inside ProtoTwin simulation
-
-The workflow follows a **simulation-first robotics development approach**.
+The goal is to train a locomotion policy for the quadruped robot and evaluate it inside the ProtoTwin simulation environment.
 
 ---
 
-# System Workflow
+# Project Overview
 
-Typical workflow of the project:
+This repository includes:
+
+- Reinforcement learning training code
+- ProtoTwin simulation environment
+- PPO locomotion policy
+- Simulation execution scripts
+
+The robot learns to **walk forward while maintaining stability**.
+
+---
+
+# System Architecture
 
 ```
-Robot Simulation (ProtoTwin)
+ProtoTwin Simulation (.ptm)
         ↓
 Environment Interface
         ↓
-Reinforcement Learning Training
+Reinforcement Learning (PPO)
         ↓
 Trained Policy Model
         ↓
@@ -41,17 +40,20 @@ Simulation Execution
 ```
 go2-simulation
 │
+├── walking.ptm
+│   ProtoTwin simulation model
+│
 ├── train_walking.py
 │   Reinforcement learning training script
 │
 ├── run_walking.py
-│   Runs trained model in ProtoTwin simulation
+│   Runs trained model in simulation
 │
 ├── logs
-│   Training logs and checkpoints
+│   training checkpoints
 │
-├── models
-│   Saved trained models
+├── tensorboard
+│   training logs
 │
 └── README.md
 ```
@@ -60,68 +62,98 @@ go2-simulation
 
 # Requirements
 
-Before running the project install the following:
+Install the following software before running the project.
 
-- Python 3.10+
-- ProtoTwin Connect
-- Stable-Baselines3
-- Gymnasium
-- TensorBoard
+Python version:
 
----
-
-# Installation
-
-Clone the repository.
-
-```bash
-git clone https://github.com/YOUR_USERNAME/go2-simulation.git
-cd go2-simulation
+```
+Python 3.10+
 ```
 
-Install required libraries.
+Required libraries:
 
-```bash
+```
+stable-baselines3
+prototwin
+prototwin-gymnasium
+tensorboard
+gymnasium
+torch
+numpy
+```
+
+Install dependencies:
+
+```
 pip install stable-baselines3
-pip install tensorboard
+pip install prototwin
 pip install prototwin-gymnasium
+pip install tensorboard
+pip install gymnasium
+pip install torch
 ```
 
 ---
 
-# Training the Model
+# Training the Walking Model
 
-To train the locomotion model run:
+Run the training script:
 
-```bash
+```
 python train_walking.py
 ```
 
-During training:
+The training script will:
 
-Model checkpoints will be saved in:
+- Start ProtoTwin simulation
+- Create multiple simulation environments
+- Train PPO locomotion policy
+- Save checkpoints
+- Save the final trained model
+
+Training settings:
+
+- Algorithm: PPO
+- Timesteps: 1,000,000
+- Parallel environments: 8
+- Neural network size:  
+  256 → 256 → 128
+
+---
+
+# Training Outputs
+
+During training the following files will be generated.
+
+Checkpoint models:
 
 ```
-logs/checkpoint
+logs/checkpoints/
 ```
 
-TensorBoard logs will be saved in:
+TensorBoard logs:
 
 ```
-tensorboard/PPO
+tensorboard/
+```
+
+Final trained model:
+
+```
+walking_final_model.zip
 ```
 
 ---
 
 # Monitoring Training
 
-To monitor training progress run:
+To monitor the training process:
 
-```bash
-tensorboard --logdir logs/tensorboard
+```
+tensorboard --logdir tensorboard
 ```
 
-Open in browser:
+Open browser:
 
 ```
 http://localhost:6006
@@ -131,41 +163,113 @@ http://localhost:6006
 
 # Running the Simulation
 
-After training the model run the simulation:
+After training finishes, run the simulation with the trained model.
 
-```bash
+```
 python run_walking.py
 ```
 
 This script will:
 
-- Load the trained model
-- Connect to ProtoTwin
-- Execute the locomotion policy in simulation
+1. Start ProtoTwin
+2. Load simulation model
+3. Load trained PPO policy
+4. Run robot locomotion
+
+Console output will show:
+
+- robot velocity
+- reward
+- actions
+- reset events
 
 ---
 
-# Example Development Workflow
+# Robot Control
 
-Typical development process:
+The robot has **12 controllable joints**.
 
-1. Build simulation environment in ProtoTwin  
-2. Train locomotion policy using reinforcement learning  
-3. Monitor training with TensorBoard  
-4. Run simulation with trained model  
-5. Evaluate robot behavior  
+Leg structure:
+
+```
+4 legs
+3 joints per leg
+
+hip
+thigh
+calf
+```
+
+Total actions:
+
+```
+12 joint position targets
+```
+
+Actions control the **target joint positions**.
 
 ---
 
-# Future Improvements
+# Observation Space
 
-Possible improvements for this project:
+The policy observes:
 
-- Improved walking stability
-- Turning and navigation behaviors
-- Sim-to-real transfer
-- Domain randomization
-- Hardware deployment on Unitree Go2
+- base position
+- base orientation
+- angular velocity
+- linear velocity
+- joint positions
+- joint velocities
+- foot positions
+- previous action
+- target speed
+
+This allows the policy to maintain **balance and forward motion**.
+
+---
+
+# Reward Function
+
+The reward encourages:
+
+Positive rewards:
+
+- forward velocity
+- upright orientation
+- correct body height
+- stable heading
+- low lateral movement
+
+Penalties:
+
+- sudden action changes
+- high torque
+- high joint velocity
+
+This helps produce **stable walking behavior**.
+
+---
+
+# Episode Termination
+
+Episode ends if:
+
+- robot falls
+- robot tilts too much
+- robot drifts sideways
+- episode time limit reached
+
+---
+
+# Future Work
+
+Possible improvements:
+
+- turning control
+- navigation tasks
+- terrain randomization
+- sim-to-real transfer
+- real Unitree Go2 deployment
 
 ---
 
@@ -175,9 +279,9 @@ ProtoTwin
 
 https://prototwin.com
 
-Stable-Baselines3
+Stable Baselines3
 
-https://github.com/DLR-RM/stable-baselines3'
+https://github.com/DLR-RM/stable-baselines3
 
 Prototwin RLExamples
 
